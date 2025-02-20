@@ -1,5 +1,3 @@
-// Terraform outputs.tf for vpc module
-// modules/vpc/outputs.tf
 output "vpc_id" {
   description = "The ID of the VPC"
   value       = module.vpc.vpc_id
@@ -17,5 +15,5 @@ output "private_subnets" {
 
 output "nat_gateway_id" {
   description = "The ID of the NAT Gateway"
-  value       = module.vpc.nat_gateway_id
+  value       = module.vpc.natgw_ids
 }

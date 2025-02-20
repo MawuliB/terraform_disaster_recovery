@@ -6,3 +6,13 @@ terraform {
     }
   }
 }
+
+provider "aws" {
+  alias  = "primary"
+  region = "eu-west-1"
+}
+
+provider "aws" {
+  alias  = "secondary"
+  region = "eu-west-2"
+}
