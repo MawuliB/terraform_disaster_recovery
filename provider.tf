@@ -4,15 +4,19 @@ terraform {
       source  = "hashicorp/aws"
       version = ">= 5.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = ">= 0.7"
+    }
   }
 }
 
 provider "aws" {
   alias  = "primary"
-  region = "eu-west-1"
+  region = var.aws_region
 }
 
 provider "aws" {
   alias  = "secondary"
-  region = "eu-west-2"
+  region = var.aws_region_secondary
 }
