@@ -61,7 +61,12 @@ variable "tags" {
   default     = {}
 }
 
+variable "source_db_instance_identifier" {
+  description = "The identifier of the source DB instance for a read replica."
+  type        = string
+}
+
 variable "db_subnet_ids" {
-  description = "A list of DB subnet IDs."
-  type        = list(string)
+  description = "A list of DB subnet IDs for the DB subnet group."
+  type        = list(string) 
 }

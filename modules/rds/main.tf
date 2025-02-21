@@ -1,1 +1,28 @@
-// Terraform main.tf for rds module
+resource "aws_db_instance" "primary" {
+    depends_on = [ aws_db_subnet_group ]
+  allocated_storage      = var.allocated_storage
+  engine                 = var.engine
+  engine_version         = var.engine_version
+  instance_class         = var.instance_class
+  identifier             = var.identifier
+  username               = var.username
+  password               = var.password
+  parameter_group_name   = var.parameter_group_name
+  db_subnet_group_name   = aws_db_subnet_group.default.name
+  vpc_security_group_ids = var.vpc_security_group_ids
+  multi_az               = var.multi_az
+  publicly_accessible    = false
+  storage_encrypted      = true
+  skip_final_snapshot    = true
+
+  tags = var.tags
+}
+
+resource "aws_db_subnet_group" "default" {
+  name       = "dr-db-subnet-group"
+  subnet_ids = var.db_subnet_ids
+
+  tags = {
+    Name = "DR DB Subnet Group"
+  }
+}
