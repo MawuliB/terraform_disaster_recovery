@@ -140,9 +140,9 @@ module "elb_secondary" {
 # S3 Replication Role Module
 
 module "s3_replication_role" {
-  source = "./modules/iam-s3-replication"
-  role_name = "dr-s3-replication-role"
-  source_bucket_arn = module.s3_primary.bucket_arn
+  source                 = "./modules/iam-s3-replication"
+  role_name              = "dr-s3-replication-role"
+  source_bucket_arn      = module.s3_primary.bucket_arn
   destination_bucket_arn = module.s3_secondary.bucket_arn
 }
 
@@ -153,12 +153,12 @@ module "s3_primary" {
   providers = {
     aws = aws.primary
   }
-  source           = "./modules/s3"
-  bucket_name      = "dr-backup-primary-bucket"
-  expiration_days  = 30
-  enable_replication = true
-  replication_role_arn = module.s3_replication_role.role_arn
-  destination_bucket_arn = module.s3_secondary.bucket_arn
+  source                    = "./modules/s3"
+  bucket_name               = "dr-backup-primary-bucket"
+  expiration_days           = 30
+  enable_replication        = true
+  replication_role_arn      = module.s3_replication_role.role_arn
+  destination_bucket_arn    = module.s3_secondary.bucket_arn
   destination_storage_class = "STANDARD"
   tags = {
     Environment = "primary"
@@ -171,9 +171,9 @@ module "s3_secondary" {
   providers = {
     aws = aws.secondary
   }
-  source          = "./modules/s3"
-  bucket_name     = "dr-backup-secondary-bucket"
-  expiration_days = 30
+  source             = "./modules/s3"
+  bucket_name        = "dr-backup-secondary-bucket"
+  expiration_days    = 30
   enable_replication = false
   tags = {
     Environment = "secondary"
@@ -186,18 +186,18 @@ module "rds_primary" {
   providers = {
     aws = aws.primary
   }
-  source               = "./modules/rds"
-  allocated_storage    = 20
-  engine               = "mysql"
-  engine_version       = "8.0"
-  instance_class       = "db.t3.micro"
-  identifier           = "dr-primary-db"
-  db_subnet_ids        = module.vpc_primary.private_subnets
-  username             = var.db_username
-  password             = var.db_password
-  parameter_group_name = var.db_parameter_group
+  source                 = "./modules/rds"
+  allocated_storage      = 20
+  engine                 = "mysql"
+  engine_version         = "8.0"
+  instance_class         = "db.t3.micro"
+  identifier             = "dr-primary-db"
+  db_subnet_ids          = module.vpc_primary.private_subnets
+  username               = var.db_username
+  password               = var.db_password
+  parameter_group_name   = var.db_parameter_group
   vpc_security_group_ids = [module.security_group_primary.security_group_id]
-  multi_az             = false
+  multi_az               = false
   tags = {
     Environment = "primary"
     Project     = "DR"
@@ -209,18 +209,18 @@ module "rds_read_replica" {
   providers = {
     aws = aws.secondary
   }
-  source = "./modules/rds_replica"
-  allocated_storage    = 20
-  engine               = "mysql"
-  engine_version       = "8.0"
-  instance_class       = "db.t3.micro"
-  identifier           = "dr-read-replica"
-  db_subnet_ids        = module.vpc_secondary.private_subnets
-  username             = var.db_username
-  password             = var.db_password
-  parameter_group_name = var.db_parameter_group
+  source                 = "./modules/rds_replica"
+  allocated_storage      = 20
+  engine                 = "mysql"
+  engine_version         = "8.0"
+  instance_class         = "db.t3.micro"
+  identifier             = "dr-read-replica"
+  db_subnet_ids          = module.vpc_secondary.private_subnets
+  username               = var.db_username
+  password               = var.db_password
+  parameter_group_name   = var.db_parameter_group
   vpc_security_group_ids = [module.security_group_secondary.security_group_id]
-  multi_az             = false
+  multi_az               = false
   # This is critical: replicate from the primary DB instance
   source_db_instance_identifier = module.rds_primary.db_instance_identifier
   tags = {
