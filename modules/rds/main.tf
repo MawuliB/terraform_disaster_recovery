@@ -1,5 +1,5 @@
 resource "aws_db_instance" "primary" {
-    depends_on = [ aws_db_subnet_group ]
+    depends_on = [ aws_db_subnet_group.default ]
   allocated_storage      = var.allocated_storage
   engine                 = var.engine
   engine_version         = var.engine_version

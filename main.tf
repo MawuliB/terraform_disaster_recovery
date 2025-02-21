@@ -138,14 +138,12 @@ module "elb_secondary" {
 
 
 # S3 Replication Role Module
-
 module "s3_replication_role" {
-  source                 = "./modules/iam-s3-replication"
+  source                 = "./modules/iam_s3_replication"
   role_name              = "dr-s3-replication-role"
   source_bucket_arn      = module.s3_primary.bucket_arn
   destination_bucket_arn = module.s3_secondary.bucket_arn
 }
-
 
 
 # S3 Module Call (Primary Region)
@@ -153,13 +151,10 @@ module "s3_primary" {
   providers = {
     aws = aws.primary
   }
-  source                    = "./modules/s3"
-  bucket_name               = "dr-backup-primary-bucket"
-  expiration_days           = 30
-  enable_replication        = true
-  replication_role_arn      = module.s3_replication_role.role_arn
-  destination_bucket_arn    = module.s3_secondary.bucket_arn
-  destination_storage_class = "STANDARD"
+  source             = "./modules/s3"
+  bucket_name        = "dr-backup-primary-bucket"
+  expiration_days    = 30
+  enable_replication = false
   tags = {
     Environment = "primary"
     Project     = "DR"
@@ -179,6 +174,20 @@ module "s3_secondary" {
     Environment = "secondary"
     Project     = "DR"
   }
+}
+
+# S3 Replication Configuration (Primary Region)
+module "s3_primary_replication" {
+  providers = {
+    aws = aws.primary
+  }
+  source                    = "./modules/s3"
+  bucket_name               = "dr-backup-primary-bucket"
+  expiration_days           = 30
+  enable_replication        = true
+  replication_role_arn      = module.s3_replication_role.replication_role_arn
+  destination_bucket_arn    = module.s3_secondary.bucket_arn
+  destination_storage_class = "STANDARD"
 }
 
 # RDS Module Call (Primary Region)

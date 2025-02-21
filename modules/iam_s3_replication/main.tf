@@ -42,8 +42,3 @@ resource "aws_iam_role_policy_attachment" "replication_attach" {
   role       = aws_iam_role.s3_replication.name
   policy_arn = aws_iam_policy.s3_replication_policy.arn
 }
-
-output "replication_role_arn" {
-  description = "The ARN of the S3 replication role"
-  value       = aws_iam_role.s3_replication.arn
-}
