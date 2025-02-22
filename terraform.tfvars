@@ -1,4 +1,9 @@
-aws_region       = "eu-west-1"
-ami_id_primary   = "ami-03fd334507439f4d1"
-ami_id_secondary = "ami-091f18e98bc129c4e"
-instance_type    = "t3.micro"
+aws_region            = "eu-west-1"
+ami_id_primary        = "ami-03fd334507439f4d1"
+ami_id_secondary      = "ami-091f18e98bc129c4e"
+instance_type         = "t3.micro"
+db_username           = "admin"    # not to be done in production
+db_password           = "password" # not to be done in production
+db_parameter_group    = "default.mysql8.0"
+primary_bucket_name   = "dr-backup-primary-bucketv1"
+secondary_bucket_name = "dr-backup-secondary-bucketv1"

@@ -1,36 +1,43 @@
 resource "aws_s3_bucket" "backup" {
   bucket = var.bucket_name
-  acl    = "private"
-
-  versioning {
-    enabled = true
-  }
-
+  
   lifecycle_rule {
-    id      = "expire-backups"
     enabled = true
-    prefix = ""
-
     expiration {
       days = var.expiration_days
     }
   }
 
-  dynamic "replication_configuration" {
-    for_each = var.enable_replication ? [1] : []
-    content {
-      role = var.replication_role_arn
-      rules {
-        id     = "CRR"
-        status = "Enabled"
-        prefix = ""
-        destination {
-          bucket        = var.destination_bucket_arn
-          storage_class = var.destination_storage_class
-        }
-      }
+  # Remove replication configuration from here
+  tags = var.tags
+}
+
+resource "aws_s3_bucket_versioning" "backup_versioning" {
+  bucket = aws_s3_bucket.backup.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Add separate replication configuration resource
+resource "aws_s3_bucket_replication_configuration" "replication" {
+  # Only create this if replication is enabled
+  count = var.enable_replication ? 1 : 0
+  
+  # Depends on both bucket and versioning
+  depends_on = [aws_s3_bucket_versioning.backup_versioning]
+
+  bucket = aws_s3_bucket.backup.id
+  role   = var.replication_role_arn
+
+  rule {
+    id     = "CRR"
+    status = "Enabled"
+    prefix = ""
+    
+    destination {
+      bucket        = var.destination_bucket_arn
+      storage_class = var.destination_storage_class
     }
   }
-
-  tags = var.tags
 }

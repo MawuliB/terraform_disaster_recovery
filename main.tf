@@ -137,24 +137,18 @@ module "elb_secondary" {
 }
 
 
-# S3 Replication Role Module
-module "s3_replication_role" {
-  source                 = "./modules/iam_s3_replication"
-  role_name              = "dr-s3-replication-role"
-  source_bucket_arn      = module.s3_primary.bucket_arn
-  destination_bucket_arn = module.s3_secondary.bucket_arn
-}
-
-
 # S3 Module Call (Primary Region)
 module "s3_primary" {
   providers = {
     aws = aws.primary
   }
-  source             = "./modules/s3"
-  bucket_name        = "dr-backup-primary-bucket"
-  expiration_days    = 30
-  enable_replication = false
+  source                    = "./modules/s3"
+  bucket_name               = var.primary_bucket_name
+  expiration_days           = 30
+  enable_replication        = true
+  replication_role_arn      = module.s3_replication_role.replication_role_arn
+  destination_bucket_arn    = module.s3_secondary.bucket_arn
+  destination_storage_class = "STANDARD"
   tags = {
     Environment = "primary"
     Project     = "DR"
@@ -167,7 +161,7 @@ module "s3_secondary" {
     aws = aws.secondary
   }
   source             = "./modules/s3"
-  bucket_name        = "dr-backup-secondary-bucket"
+  bucket_name        = var.secondary_bucket_name
   expiration_days    = 30
   enable_replication = false
   tags = {
@@ -176,19 +170,29 @@ module "s3_secondary" {
   }
 }
 
-# S3 Replication Configuration (Primary Region)
-module "s3_primary_replication" {
-  providers = {
-    aws = aws.primary
-  }
-  source                    = "./modules/s3"
-  bucket_name               = "dr-backup-primary-bucket"
-  expiration_days           = 30
-  enable_replication        = true
-  replication_role_arn      = module.s3_replication_role.replication_role_arn
-  destination_bucket_arn    = module.s3_secondary.bucket_arn
-  destination_storage_class = "STANDARD"
+
+# S3 Replication Role Module
+module "s3_replication_role" {
+  source                 = "./modules/iam_s3_replication"
+  role_name              = "dr-s3-replication-role"
+  source_bucket_arn      = module.s3_primary.bucket_arn
+  destination_bucket_arn = module.s3_secondary.bucket_arn
 }
+
+# S3 Replication Configuration (Primary Region)
+# module "s3_primary_replication" {
+#   depends_on = [module.s3_replication_role]
+#   providers = {
+#     aws = aws.primary
+#   }
+#   source                    = "./modules/s3"
+#   bucket_name               = var.primary_bucket_name
+#   expiration_days           = 30
+#   enable_replication        = true
+#   replication_role_arn      = module.s3_replication_role.replication_role_arn
+#   destination_bucket_arn    = module.s3_secondary.bucket_arn
+#   destination_storage_class = "STANDARD"
+# }
 
 # RDS Module Call (Primary Region)
 module "rds_primary" {
@@ -215,6 +219,7 @@ module "rds_primary" {
 
 # RDS Read Replica Call (Secondary Region)
 module "rds_read_replica" {
+  depends_on = [ module.rds_primary ]
   providers = {
     aws = aws.secondary
   }
@@ -230,8 +235,10 @@ module "rds_read_replica" {
   parameter_group_name   = var.db_parameter_group
   vpc_security_group_ids = [module.security_group_secondary.security_group_id]
   multi_az               = false
+  # skip_final_snapshot    = false
+  # is_read_replica        = false
   # This is critical: replicate from the primary DB instance
-  source_db_instance_identifier = module.rds_primary.db_instance_identifier
+  source_db_instance_identifier = module.rds_primary.db_instance_arn
   tags = {
     Environment = "secondary"
     Project     = "DR"

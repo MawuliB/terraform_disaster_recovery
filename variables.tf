@@ -35,6 +35,10 @@ variable "db_parameter_group" {
   description = "The name of the DB parameter group"
 }
 
-variable "db_subnet_group" {
-  description = "The DB subnet group name"
+variable "primary_bucket_name" {
+  description = "The name of the primary bucket"
+}
+
+variable "secondary_bucket_name" {
+  description = "The name of the secondary bucket"
 }

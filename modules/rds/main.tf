@@ -13,7 +13,9 @@ resource "aws_db_instance" "primary" {
   multi_az               = var.multi_az
   publicly_accessible    = false
   storage_encrypted      = true
-  skip_final_snapshot    = true
+  skip_final_snapshot    = false
+  final_snapshot_identifier = "${var.identifier}-final-snapshot"
+  backup_retention_period = 7
 
   tags = var.tags
 }
