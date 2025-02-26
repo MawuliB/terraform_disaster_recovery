@@ -219,7 +219,7 @@ module "rds_primary" {
 
 # RDS Read Replica Call (Secondary Region)
 module "rds_read_replica" {
-  depends_on = [ module.rds_primary ]
+  depends_on = [module.rds_primary]
   providers = {
     aws = aws.secondary
   }
@@ -248,21 +248,21 @@ module "rds_read_replica" {
 
 # Route53 Failover Module
 module "route53_failover" {
-  depends_on = [ module.elb_primary, module.elb_secondary ]
-  source = "./modules/route53"
+  depends_on = [module.elb_primary, module.elb_secondary]
+  source     = "./modules/route53"
 
-  hosted_zone_id          = var.hosted_zone_id
-  domain_name             = var.domain_name
-  primary_alb_dns         = module.elb_primary.alb_dns_name
-  primary_alb_zone_id     = module.elb_primary.alb_zone_id
-  secondary_alb_dns       = module.elb_secondary.alb_dns_name
-  secondary_alb_zone_id   = module.elb_secondary.alb_zone_id
-  primary_fqdn            = var.primary_fqdn
-  health_check_port       = var.health_check_port
-  health_check_type       = var.health_check_type
-  health_check_interval   = var.health_check_interval
+  hosted_zone_id                 = var.hosted_zone_id
+  domain_name                    = var.domain_name
+  primary_alb_dns                = module.elb_primary.alb_dns_name
+  primary_alb_zone_id            = module.elb_primary.alb_zone_id
+  secondary_alb_dns              = module.elb_secondary.alb_dns_name
+  secondary_alb_zone_id          = module.elb_secondary.alb_zone_id
+  primary_fqdn                   = var.primary_fqdn
+  health_check_port              = var.health_check_port
+  health_check_type              = var.health_check_type
+  health_check_interval          = var.health_check_interval
   health_check_failure_threshold = var.health_check_failure_threshold
-  tags                    = {
+  tags = {
     Environment = "DR"
     Project     = "DR"
   }
@@ -270,16 +270,16 @@ module "route53_failover" {
 
 # Lambda Failover Module
 module "lambda_failover" {
-  depends_on = [ module.ec2, module.asg_secondary, module.elb_secondary, module.rds_read_replica ]
-  source = "./modules/lambda"
+  depends_on = [module.ec2, module.asg_secondary, module.elb_secondary, module.rds_read_replica]
+  source     = "./modules/lambda"
 
-  lambda_role_name        = "dr-failover-lambda-role"
-  route53_zone_arn        = "arn:aws:route53:::hostedzone/${var.hosted_zone_id}"
-  lambda_function_name    = "DRFailoverLambda"
-  lambda_runtime          = "python3.9"
-  lambda_zip_path         = "modules/lambda/code/failover.zip"
+  lambda_role_name     = "dr-failover-lambda-role"
+  route53_zone_arn     = "arn:aws:route53:::hostedzone/${var.hosted_zone_id}"
+  lambda_function_name = "DRFailoverLambda"
+  lambda_runtime       = "python3.9"
+  lambda_zip_path      = "modules/lambda/code/failover.zip"
   lambda_environment_variables = {
-    DOMAIN_NAME = var.domain_name,
+    DOMAIN_NAME         = var.domain_name,
     PRIMARY_REGION      = var.aws_region,
     SECONDARY_REGION    = var.aws_region_secondary,
     STANDBY_INSTANCE_ID = module.ec2.instance_id,
