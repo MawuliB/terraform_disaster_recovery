@@ -51,6 +51,13 @@ resource "aws_iam_policy" "failover_lambda_policy" {
           "rds:DescribeDBLogFiles"
         ],
         Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "sns:Publish"
+        ],
+        Resource = "*"
       }
     ]
   })

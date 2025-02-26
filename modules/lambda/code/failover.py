@@ -8,8 +8,13 @@ ec2 = boto3.client('ec2', region_name=secondary_region)
 autoscaling = boto3.client('autoscaling', region_name=secondary_region)
 rds = boto3.client('rds', region_name=secondary_region)
 route53 = boto3.client('route53')
+sns = boto3.client('sns')
 
 def handler(event, context):
+    # Notify the admin that a failover is starting
+    sns_topic_arn = os.environ['SNS_TOPIC_ARN']
+    sns.publish(TopicArn=sns_topic_arn, Message="Failover initiated. Starting failover process...")
+
     # ---- Step 1: Start the standby instance ----
     instance_id = os.environ['STANDBY_INSTANCE_ID']
     print(f"Starting standby instance: {instance_id}")
@@ -99,5 +104,8 @@ def handler(event, context):
     db_info = rds.describe_db_instances(DBInstanceIdentifier=read_replica_id)
     db_endpoint = db_info['DBInstances'][0]['Endpoint']['Address']
     print("Promoted DB endpoint (URL):", db_endpoint)
+
+    # Notify the admin that the failover is complete
+    sns.publish(TopicArn=sns_topic_arn, Message="Failover complete. Failover process is complete.")
     
     return {"status": "Failover complete", "db_endpoint": db_endpoint}

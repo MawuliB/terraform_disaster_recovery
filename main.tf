@@ -273,6 +273,10 @@ module "lambda_failover" {
   depends_on = [module.ec2, module.asg_secondary, module.elb_secondary]
   source     = "./modules/lambda"
 
+  providers = {
+    aws = aws.secondary
+  }
+
   lambda_role_name     = "dr-failover-lambda-role"
   route53_zone_arn     = "arn:aws:route53:::hostedzone/${var.hosted_zone_id}"
   lambda_function_name = "DRFailoverLambda"
@@ -287,7 +291,8 @@ module "lambda_failover" {
     ASG_NAME            = module.asg_secondary.asg_name,
     ELB_DNS             = module.elb_secondary.alb_dns_name,
     ELB_HOSTED_ZONE_ID  = module.elb_secondary.alb_zone_id,
-    READ_REPLICA_ID     = module.rds_read_replica.db_instance_identifier
+    READ_REPLICA_ID     = module.rds_read_replica.db_instance_identifier,
+    SNS_TOPIC_ARN       = module.monitoring.sns_topic_arn
   }
 }
 
@@ -296,15 +301,19 @@ module "lambda_failover" {
 module "monitoring" {
   source = "./modules/monitoring"
 
+  providers = {
+    aws = aws.primary
+  }
+
   sns_topic_name         = "dr-alerts-topic"
   subscription_protocol  = "email"
   subscription_endpoint  = var.alert_email
 
-  ec2_alarm_name         = "DR-EC2-CPU-Alarm"
-  ec2_evaluation_periods = 2
-  ec2_period             = 300
-  ec2_cpu_threshold      = 80
-  ec2_instance_id        = module.ec2.instance_id
+  asg_alarm_name         = "DR-ASG-InService-Alarm"
+  asg_evaluation_periods = 2
+  asg_period             = 300
+  asg_inservice_threshold = 1
+  asg_name               = module.asg_primary.asg_name
 
   rds_alarm_name         = "DR-RDS-CPU-Alarm"
   rds_evaluation_periods = 2
@@ -323,3 +332,29 @@ module "monitoring" {
     Project     = "DR"
   }
 }
+
+
+
+# EventBridge Failover Module
+module "eventbridge_failover" {
+  source                = "./modules/eventbridge"
+
+  providers = {
+    aws = aws.secondary
+  }
+
+  rule_name             = "failover-event-rule"
+  rule_description      = "Triggers failover Lambda when the primary health check goes unhealthy"
+  
+  event_pattern         = jsonencode({
+    "source": ["aws.route53"],
+    "detail-type": ["Route 53 Health Check Status Change"],
+    "detail": {
+      "healthCheckId": [ module.route53_failover.health_check_id ]
+    }
+  })
+  target_id             = "failover-lambda-target"
+  lambda_function_arn   = module.lambda_failover.failover_lambda_arn
+  lambda_function_name  = module.lambda_failover.lambda_function_name 
+}
+

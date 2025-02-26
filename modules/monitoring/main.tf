@@ -4,33 +4,34 @@ resource "aws_sns_topic" "dr_alerts" {
   tags = var.tags
 }
 
-# Create an SNS Topic Subscription (e.g., Email)
+# Create an SNS Topic Subscription
 resource "aws_sns_topic_subscription" "dr_alerts_subscription" {
   topic_arn = aws_sns_topic.dr_alerts.arn
-  protocol  = var.subscription_protocol   # "email", "sms", etc.
+  protocol  = var.subscription_protocol   # "email", "sms"
   endpoint  = var.subscription_endpoint
 }
 
-# CloudWatch Alarm for EC2 (Example: CPU Utilization)
-resource "aws_cloudwatch_metric_alarm" "ec2_cpu_alarm" {
-  alarm_name          = var.ec2_alarm_name
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = var.ec2_evaluation_periods
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/EC2"
-  period              = var.ec2_period
-  statistic           = "Average"
-  threshold           = var.ec2_cpu_threshold
+# CloudWatch Alarm for EC2 (CPU Utilization)
+# CloudWatch Alarm for the Auto Scaling Group (Primary)
+resource "aws_cloudwatch_metric_alarm" "asg_inservice_alarm" {
+  alarm_name          = var.asg_alarm_name
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = var.asg_evaluation_periods
+  metric_name         = "GroupInServiceInstances"
+  namespace           = "AWS/AutoScaling"
+  period              = var.asg_period
+  statistic           = "Minimum"
+  threshold           = var.asg_inservice_threshold
 
-  alarm_description = "EC2 CPU Utilization alarm for DR"
+  alarm_description = "ASG in-service instance count below threshold"
   alarm_actions     = [aws_sns_topic.dr_alerts.arn]
 
   dimensions = {
-    InstanceId = var.ec2_instance_id
+    AutoScalingGroupName = var.asg_name
   }
 }
 
-# CloudWatch Alarm for RDS (Example: CPU Utilization)
+# CloudWatch Alarm for RDS (CPU Utilization)
 resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm" {
   alarm_name          = var.rds_alarm_name
   comparison_operator = "GreaterThanThreshold"
@@ -49,7 +50,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm" {
   }
 }
 
-# CloudWatch Alarm for S3 Bucket Size (Example: BucketSizeBytes)
+# CloudWatch Alarm for S3 Bucket Size (BucketSizeBytes)
 resource "aws_cloudwatch_metric_alarm" "s3_bucket_size_alarm" {
   alarm_name          = var.s3_alarm_name
   comparison_operator = "GreaterThanThreshold"

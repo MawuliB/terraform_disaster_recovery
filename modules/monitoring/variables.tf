@@ -14,31 +14,32 @@ variable "subscription_endpoint" {
   type        = string
 }
 
-variable "ec2_alarm_name" {
-  description = "Name of the CloudWatch alarm for EC2"
+# Variables for the ASG alarm
+variable "asg_alarm_name" {
+  description = "Name of the CloudWatch alarm for the ASG"
   type        = string
 }
 
-variable "ec2_evaluation_periods" {
-  description = "Number of evaluation periods for the EC2 alarm"
+variable "asg_evaluation_periods" {
+  description = "Number of evaluation periods for the ASG alarm"
   type        = number
   default     = 2
 }
 
-variable "ec2_period" {
-  description = "Period (in seconds) for the EC2 alarm metric"
+variable "asg_period" {
+  description = "Period (in seconds) for the ASG alarm metric"
   type        = number
   default     = 300
 }
 
-variable "ec2_cpu_threshold" {
-  description = "CPU utilization threshold for the EC2 alarm"
+variable "asg_inservice_threshold" {
+  description = "Threshold for the number of in-service instances in the ASG"
   type        = number
-  default     = 80
+  default     = 1
 }
 
-variable "ec2_instance_id" {
-  description = "EC2 instance ID to monitor"
+variable "asg_name" {
+  description = "Name of the Auto Scaling Group to monitor"
   type        = string
 }
 
