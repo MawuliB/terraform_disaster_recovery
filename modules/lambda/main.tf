@@ -29,14 +29,26 @@ resource "aws_iam_policy" "failover_lambda_policy" {
       {
         Effect = "Allow",
         Action = [
-          "ec2:StartInstances"
+          "ec2:StartInstances",
+          "ec2:DescribeInstances"
         ],
         Resource = "*"
       },
       {
         Effect = "Allow",
         Action = [
-          "rds:StartDBInstance"
+          "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:UpdateAutoScalingGroup"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "rds:StartDBInstance",
+          "rds:DescribeDBInstances",
+          "rds:PromoteReadReplica",
+          "rds:DescribeDBLogFiles"
         ],
         Resource = "*"
       }
@@ -55,6 +67,7 @@ resource "aws_lambda_function" "failover_lambda" {
   handler       = "failover.handler"
   runtime       = var.lambda_runtime
   role          = aws_iam_role.failover_lambda_role.arn
+  timeout       = 600  # 10 minutes
 
   filename         = var.lambda_zip_path
   source_code_hash = filebase64sha256(var.lambda_zip_path)
