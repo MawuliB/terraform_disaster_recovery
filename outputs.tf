@@ -13,3 +13,11 @@ output "elb_primary_dns_name" {
 output "elb_secondary_dns_name" {
   value = module.elb_secondary.alb_dns_name
 }
+
+output "primary_record_fqdn" {
+  value = module.route53.primary_record_fqd
+}
+
+output "secondary_record_fqdn" {
+  value = module.route53.secondary_record_fqd
+}
