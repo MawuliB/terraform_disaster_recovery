@@ -74,3 +74,7 @@ variable "health_check_failure_threshold" {
   description = "The health check failure threshold"
   default     = 3
 }
+
+variable "alert_email" {
+  description = "The email address to send alerts to"
+}

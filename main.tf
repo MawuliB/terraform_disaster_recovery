@@ -10,7 +10,7 @@ module "vpc_primary" {
   source             = "./modules/vpc"
   vpc_name           = "dr-vpc-primary"
   vpc_cidr           = "10.0.0.0/16"
-  availability_zones = ["eu-west-1a", "eu-west-1b"]
+  availability_zones = ["${var.aws_region}a", "${var.aws_region}b"]
   private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
   public_subnets     = ["10.0.101.0/24", "10.0.102.0/24"]
   tags = {
@@ -25,7 +25,7 @@ module "vpc_secondary" {
   source             = "./modules/vpc"
   vpc_name           = "dr-vpc-secondary"
   vpc_cidr           = "10.0.0.0/16"
-  availability_zones = ["eu-west-2a", "eu-west-2b"]
+  availability_zones = ["${var.aws_region_secondary}a", "${var.aws_region_secondary}b"]
   private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
   public_subnets     = ["10.0.101.0/24", "10.0.102.0/24"]
   tags = {
@@ -257,7 +257,7 @@ module "route53_failover" {
   primary_alb_zone_id            = module.elb_primary.alb_zone_id
   secondary_alb_dns              = module.elb_secondary.alb_dns_name
   secondary_alb_zone_id          = module.elb_secondary.alb_zone_id
-  primary_fqdn                   = var.primary_fqdn
+  primary_fqdn                   = module.elb_primary.alb_dns_name
   health_check_port              = var.health_check_port
   health_check_type              = var.health_check_type
   health_check_interval          = var.health_check_interval
@@ -270,7 +270,7 @@ module "route53_failover" {
 
 # Lambda Failover Module
 module "lambda_failover" {
-  depends_on = [module.ec2, module.asg_secondary, module.elb_secondary, module.rds_read_replica]
+  depends_on = [module.ec2, module.asg_secondary, module.elb_secondary]
   source     = "./modules/lambda"
 
   lambda_role_name     = "dr-failover-lambda-role"
@@ -288,5 +288,38 @@ module "lambda_failover" {
     ELB_DNS             = module.elb_secondary.alb_dns_name,
     ELB_HOSTED_ZONE_ID  = module.elb_secondary.alb_zone_id,
     READ_REPLICA_ID     = module.rds_read_replica.db_instance_identifier
+  }
+}
+
+
+# Monitoring Module
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  sns_topic_name         = "dr-alerts-topic"
+  subscription_protocol  = "email"
+  subscription_endpoint  = var.alert_email
+
+  ec2_alarm_name         = "DR-EC2-CPU-Alarm"
+  ec2_evaluation_periods = 2
+  ec2_period             = 300
+  ec2_cpu_threshold      = 80
+  ec2_instance_id        = module.ec2.instance_id
+
+  rds_alarm_name         = "DR-RDS-CPU-Alarm"
+  rds_evaluation_periods = 2
+  rds_period             = 300
+  rds_cpu_threshold      = 80
+  rds_instance_identifier = module.rds_primary.db_instance_identifier
+
+  s3_alarm_name          = "DR-S3-Bucket-Size-Alarm"
+  s3_evaluation_periods  = 1
+  s3_period              = 86400
+  s3_size_threshold      = 10000000000
+  s3_bucket_name         = module.s3_primary.bucket_name
+
+  tags = {
+    Environment = "DR"
+    Project     = "DR"
   }
 }
