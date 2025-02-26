@@ -5,7 +5,7 @@ variable "aws_region" {
 
 variable "aws_region_secondary" {
   description = "AWS region"
-  default     = "eu-west-2"
+  default     = "eu-central-1"
 }
 
 variable "ami_id_primary" {
