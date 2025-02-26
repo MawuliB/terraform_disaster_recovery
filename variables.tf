@@ -42,3 +42,35 @@ variable "primary_bucket_name" {
 variable "secondary_bucket_name" {
   description = "The name of the secondary bucket"
 }
+
+variable "hosted_zone_id" {
+  description = "The Route 53 hosted zone ID"
+}
+
+variable "domain_name" {
+  description = "The domain name"
+}
+
+variable "primary_fqdn" {
+  description = "The primary FQDN"
+}
+
+variable "health_check_port" {
+  description = "The health check port"
+  default     = 80
+}
+
+variable "health_check_type" {
+  description = "The health check type"
+  default     = "HTTP"
+}
+
+variable "health_check_interval" {
+  description = "The health check interval"
+  default     = 30
+}
+
+variable "health_check_failure_threshold" {
+  description = "The health check failure threshold"
+  default     = 3
+}
