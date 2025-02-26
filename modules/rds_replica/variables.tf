@@ -61,7 +61,25 @@ variable "tags" {
   default     = {}
 }
 
+variable "source_db_instance_identifier" {
+  description = "The identifier of the source DB instance for a read replica."
+  type        = string
+}
+
 variable "db_subnet_ids" {
-  description = "A list of DB subnet IDs."
-  type        = list(string)
+  description = "A list of DB subnet IDs for the DB subnet group."
+  type        = list(string) 
+}
+
+variable "skip_final_snapshot" {
+  description = "Whether to skip the final snapshot when destroying the DB instance"
+  type        = bool
+  default     = false
+}
+
+variable "is_read_replica" {
+  description = "Whether the RDS instance is a read replica"
+  type        = bool
+  default     = true
+  
 }
