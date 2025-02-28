@@ -31,3 +31,16 @@ variable "lambda_environment_variables" {
   type        = map(string)
   default     = {}
 }
+
+
+variable "log_retention_days" {
+  description = "Number of days to retain logs in CloudWatch"
+  type        = number
+  default     = 14
+}
+
+variable "tags" {
+  description = "Common tags for resources"
+  type        = map(string)
+  default     = {}
+}

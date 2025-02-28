@@ -8,6 +8,11 @@ variable "aws_region_secondary" {
   default     = "eu-central-1"
 }
 
+variable "aws_region_recover" {
+  description = "AWS region"
+  default     = "us-east-1"
+}
+
 variable "ami_id_primary" {
   description = "The AMI ID to use for the EC2 instances"
 }
