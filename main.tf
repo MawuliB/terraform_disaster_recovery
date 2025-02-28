@@ -1,5 +1,3 @@
-# This is the main file where we are calling the modules
-
 # Modules
 
 # VPC module
@@ -60,22 +58,6 @@ module "security_group_secondary" {
     "Name" : "dr_sg"
   }
 }
-
-# EC2 module
-
-# module "ec2" { # This is a stopped EC2 instance for that would serve as immediate backup in the secondary region
-#   providers = {
-#     aws = aws.secondary
-#   }
-#   source        = "./modules/ec2"
-#   ami_id        = var.ami_id_secondary
-#   instance_type = "t3.micro"
-#   subnet_id     = module.vpc_secondary.public_subnets[0]
-#   vpc_id        = module.vpc_secondary.vpc_id
-#   sg_id         = module.security_group_secondary.security_group_id
-#   instance_name = "dr-ec2"
-#   region        = var.aws_region_secondary
-# }
 
 # ASG module
 
@@ -220,8 +202,7 @@ module "rds_read_replica" {
   parameter_group_name   = var.db_parameter_group
   vpc_security_group_ids = [module.security_group_secondary.security_group_id]
   multi_az               = false
-  # skip_final_snapshot    = false
-  # is_read_replica        = false
+
   # This is critical: replicate from the primary DB instance
   source_db_instance_identifier = module.rds_primary.db_instance_arn
   tags = {
@@ -273,17 +254,12 @@ module "lambda_failover" {
     Project     = "DR"
   }
   lambda_environment_variables = {
-    DOMAIN_NAME         = var.domain_name,
     PRIMARY_REGION      = var.aws_region, #
     SECONDARY_REGION    = var.aws_region_secondary, #
-    HOSTED_ZONE_ID      = var.hosted_zone_id,
     ASG_NAME            = module.asg_secondary.asg_name, #
-    ELB_DNS             = module.elb_secondary.alb_dns_name,
-    ELB_HOSTED_ZONE_ID  = module.elb_secondary.alb_zone_id,
     READ_REPLICA_ID     = module.rds_read_replica.db_instance_identifier, #
     SNS_TOPIC_ARN       = module.monitoring.sns_topic_arn #
   }
-   # STANDBY_INSTANCE_ID = module.ec2.instance_id, #
 }
 
 
@@ -324,43 +300,7 @@ module "monitoring" {
 }
 
 
-
-# #EventBridge Failover Module
-# module "eventbridge_failover" {
-#   source = "./modules/eventbridge"
-
-#   depends_on = [ module.route53_failover, module.lambda_failover ]
-
-#   providers = {
-#     aws = aws.recover
-#   }
-
-#   rule_name        = "failover-event-rule"
-#   rule_description = "Triggers failover Lambda when the primary health check goes unhealthy"
-
-#   # event_pattern = jsonencode({
-#   #   "source" : ["aws.route53"],
-#   #   "detail-type" : ["Route 53 Health Check Status Change"],
-#   #   "detail" : {
-#   #     "healthCheckId" : ["${module.route53_failover.health_check_id}"]
-#   #   }
-#   # })
-#   event_pattern = jsonencode({
-#     "source" : ["aws.cloudwatch"],
-#     "detail-type" : ["CloudWatch Alarm State Change"],
-#     "detail" : {
-#       "state" : ["ALARM"],
-#       "alarmName" : ["DR-Route53-Health-Check-Alarm"]
-#     }
-#   })
-#   target_id            = "failover-lambda-target"
-#   lambda_function_arn  = module.lambda_failover.failover_lambda_arn
-#   lambda_function_name = module.lambda_failover.lambda_function_name
-# }
-
-
 #Trigger module
-
 module "trigger" {
   source = "./modules/trigger"
 

@@ -1,15 +1,26 @@
 resource "aws_s3_bucket" "backup" {
   bucket = var.bucket_name
-  
-  lifecycle_rule {
-    enabled = true
+
+  tags = var.tags
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "backup_lifecycle" {
+  bucket = aws_s3_bucket.backup.id
+
+  rule {
+    id     = "lifecycle"
+    status = "Enabled"
+
+    # Expiration settings
     expiration {
       days = var.expiration_days
     }
-  }
 
-  # Remove replication configuration from here
-  tags = var.tags
+    # Optional: filter to apply lifecycle to specific prefix/tags
+    filter {
+      prefix = ""
+    }
+  }
 }
 
 resource "aws_s3_bucket_versioning" "backup_versioning" {
@@ -33,7 +44,6 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
   rule {
     id     = "CRR"
     status = "Enabled"
-    prefix = ""
     
     destination {
       bucket        = var.destination_bucket_arn
