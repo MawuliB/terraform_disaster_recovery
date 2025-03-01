@@ -26,8 +26,8 @@ def handler(event, context):
          MaxSize=2
     )
     
-    print("Waiting 1 minutes for ASG instances to launch and become healthy...")
-    time.sleep(60)  # Wait 1 minutes
+    print("Waiting 1 minute for ASG instances to launch and become healthy...")
+    time.sleep(60)  # Wait 1 minute
 
     # ---- Step 2: Promote the RDS Read Replica to Primary ----
     read_replica_id = os.environ['READ_REPLICA_ID']
