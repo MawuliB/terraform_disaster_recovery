@@ -4,7 +4,15 @@ resource "aws_launch_template" "asg_template" {
   image_id      = var.ami_id
   instance_type = var.instance_type
 
-  user_data = filebase64("${path.root}/scripts/user_data.sh")
+  user_data = filebase64(templatefile("${path.root}/scripts/user_data.sh",
+    {
+      PRIMARY_BUCKET_URL   = var.primary_bucket_url,
+      SECONDARY_BUCKET_URL = var.secondary_bucket_url,
+      PRIMARY_DB_ENDPOINT  = var.primary_db_endpoint,
+      SECONDARY_DB_ENDPOINT = var.secondary_db_endpoint,
+      USE_DR               = var.use_dr
+    }
+  ))
 
   network_interfaces {
     associate_public_ip_address = true

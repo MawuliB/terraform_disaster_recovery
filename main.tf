@@ -62,7 +62,7 @@ module "security_group_secondary" {
 # ASG module
 
 module "asg_primary" {
-  depends_on = [module.elb_primary]
+  depends_on = [module.elb_primary, module.s3_primary, module.s3_secondary, module.rds_read_replica]
   providers = {
     aws = aws.primary
   }
@@ -75,10 +75,15 @@ module "asg_primary" {
   min_size             = 1
   max_size             = 2
   alb_target_group_arn = module.elb_primary.alb_target_group_arn
+  primary_bucket_url = module.s3_primary.bucket_url
+  secondary_bucket_url = module.s3_secondary.bucket_url
+  primary_db_endpoint = module.rds_primary.db_endpoint
+  secondary_db_endpoint = module.rds_read_replica.db_endpoint
+  use_dr = false
 }
 
 module "asg_secondary" {
-  depends_on = [module.elb_secondary]
+  depends_on = [module.elb_secondary, module.s3_primary, module.s3_secondary, module.rds_read_replica]
   providers = {
     aws = aws.secondary
   }
@@ -91,6 +96,11 @@ module "asg_secondary" {
   min_size             = 0
   max_size             = 0
   alb_target_group_arn = module.elb_secondary.alb_target_group_arn
+  primary_bucket_url = module.s3_primary.bucket_url
+  secondary_bucket_url = module.s3_secondary.bucket_url
+  primary_db_endpoint = module.rds_primary.db_endpoint
+  secondary_db_endpoint = module.rds_read_replica.db_endpoint
+  use_dr = true
 }
 
 # ELB module
