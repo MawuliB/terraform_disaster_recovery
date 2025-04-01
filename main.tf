@@ -131,6 +131,7 @@ module "elb_secondary" {
 
 # S3 Module Call (Primary Region)
 module "s3_primary" {
+  depends_on = [ module.s3_secondary]
   providers = {
     aws = aws.primary
   }

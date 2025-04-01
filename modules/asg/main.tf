@@ -4,7 +4,7 @@ resource "aws_launch_template" "asg_template" {
   image_id      = var.ami_id
   instance_type = var.instance_type
 
-  user_data = filebase64(templatefile("${path.root}/scripts/user_data.sh",
+  user_data = base64encode(templatefile("${path.module}/scripts/user_data.sh",
     {
       PRIMARY_BUCKET_URL   = var.primary_bucket_url,
       SECONDARY_BUCKET_URL = var.secondary_bucket_url,
