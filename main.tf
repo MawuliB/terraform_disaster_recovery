@@ -225,7 +225,7 @@ module "rds_read_replica" {
 
 # Route53 Failover Module
 module "route53_failover" {
-  depends_on = [module.elb_primary, module.elb_secondary]
+  depends_on = [module.elb_primary, module.elb_secondary, module.asg_primary, module.asg_secondary]
   source     = "./modules/route53"
 
   hosted_zone_id                 = var.hosted_zone_id
