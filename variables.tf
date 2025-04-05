@@ -8,6 +8,11 @@ variable "aws_region_secondary" {
   default     = "eu-central-1"
 }
 
+variable "aws_region_recover" {
+  description = "AWS region"
+  default     = "us-east-1"
+}
+
 variable "ami_id_primary" {
   description = "The AMI ID to use for the EC2 instances"
 }
@@ -73,4 +78,8 @@ variable "health_check_interval" {
 variable "health_check_failure_threshold" {
   description = "The health check failure threshold"
   default     = 3
+}
+
+variable "alert_email" {
+  description = "The email address to send alerts to"
 }

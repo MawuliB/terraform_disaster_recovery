@@ -22,7 +22,8 @@ resource "aws_iam_policy" "failover_lambda_policy" {
       {
         Effect = "Allow",
         Action = [
-          "route53:ChangeResourceRecordSets"
+          "route53:ChangeResourceRecordSets",
+          "route53:ListResourceRecordSets"
         ],
         Resource = var.route53_zone_arn
       },
@@ -51,6 +52,22 @@ resource "aws_iam_policy" "failover_lambda_policy" {
           "rds:DescribeDBLogFiles"
         ],
         Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "sns:Publish"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:*:*:*"
       }
     ]
   })
@@ -68,6 +85,7 @@ resource "aws_lambda_function" "failover_lambda" {
   runtime       = var.lambda_runtime
   role          = aws_iam_role.failover_lambda_role.arn
   timeout       = 600  # 10 minutes
+  
 
   filename         = var.lambda_zip_path
   source_code_hash = filebase64sha256(var.lambda_zip_path)
@@ -75,4 +93,11 @@ resource "aws_lambda_function" "failover_lambda" {
   environment {
     variables = var.lambda_environment_variables
   }
+}
+
+resource "aws_cloudwatch_log_group" "failover_lambda_log_group" {
+  name              = "/aws/lambda/${var.lambda_function_name}"
+  retention_in_days = var.log_retention_days
+
+  tags              = var.tags
 }

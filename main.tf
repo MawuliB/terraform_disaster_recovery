@@ -1,5 +1,3 @@
-# This is the main file where we are calling the modules
-
 # Modules
 
 # VPC module
@@ -10,7 +8,7 @@ module "vpc_primary" {
   source             = "./modules/vpc"
   vpc_name           = "dr-vpc-primary"
   vpc_cidr           = "10.0.0.0/16"
-  availability_zones = ["eu-west-1a", "eu-west-1b"]
+  availability_zones = ["${var.aws_region}a", "${var.aws_region}b"]
   private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
   public_subnets     = ["10.0.101.0/24", "10.0.102.0/24"]
   tags = {
@@ -25,7 +23,7 @@ module "vpc_secondary" {
   source             = "./modules/vpc"
   vpc_name           = "dr-vpc-secondary"
   vpc_cidr           = "10.0.0.0/16"
-  availability_zones = ["eu-west-2a", "eu-west-2b"]
+  availability_zones = ["${var.aws_region_secondary}a", "${var.aws_region_secondary}b"]
   private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
   public_subnets     = ["10.0.101.0/24", "10.0.102.0/24"]
   tags = {
@@ -61,26 +59,10 @@ module "security_group_secondary" {
   }
 }
 
-# EC2 module
-
-module "ec2" { # This is a stopped EC2 instance for that would serve as immediate backup in the secondary region
-  providers = {
-    aws = aws.secondary
-  }
-  source        = "./modules/ec2"
-  ami_id        = var.ami_id_secondary
-  instance_type = "t3.micro"
-  subnet_id     = module.vpc_secondary.public_subnets[0]
-  vpc_id        = module.vpc_secondary.vpc_id
-  sg_id         = module.security_group_secondary.security_group_id
-  instance_name = "dr-ec2"
-  region        = var.aws_region_secondary
-}
-
 # ASG module
 
 module "asg_primary" {
-  depends_on = [module.elb_primary]
+  depends_on = [module.elb_primary, module.s3_primary, module.s3_secondary, module.rds_read_replica]
   providers = {
     aws = aws.primary
   }
@@ -93,10 +75,15 @@ module "asg_primary" {
   min_size             = 1
   max_size             = 2
   alb_target_group_arn = module.elb_primary.alb_target_group_arn
+  primary_bucket_url = module.s3_primary.bucket_url
+  secondary_bucket_url = module.s3_secondary.bucket_url
+  primary_db_endpoint = module.rds_primary.db_endpoint
+  secondary_db_endpoint = module.rds_read_replica.db_endpoint
+  use_dr = false
 }
 
 module "asg_secondary" {
-  depends_on = [module.elb_secondary]
+  depends_on = [module.elb_secondary, module.s3_primary, module.s3_secondary, module.rds_read_replica]
   providers = {
     aws = aws.secondary
   }
@@ -109,6 +96,11 @@ module "asg_secondary" {
   min_size             = 0
   max_size             = 0
   alb_target_group_arn = module.elb_secondary.alb_target_group_arn
+  primary_bucket_url = module.s3_primary.bucket_url
+  secondary_bucket_url = module.s3_secondary.bucket_url
+  primary_db_endpoint = module.rds_primary.db_endpoint
+  secondary_db_endpoint = module.rds_read_replica.db_endpoint
+  use_dr = true
 }
 
 # ELB module
@@ -139,6 +131,7 @@ module "elb_secondary" {
 
 # S3 Module Call (Primary Region)
 module "s3_primary" {
+  depends_on = [ module.s3_secondary]
   providers = {
     aws = aws.primary
   }
@@ -178,21 +171,6 @@ module "s3_replication_role" {
   source_bucket_arn      = module.s3_primary.bucket_arn
   destination_bucket_arn = module.s3_secondary.bucket_arn
 }
-
-# S3 Replication Configuration (Primary Region)
-# module "s3_primary_replication" {
-#   depends_on = [module.s3_replication_role]
-#   providers = {
-#     aws = aws.primary
-#   }
-#   source                    = "./modules/s3"
-#   bucket_name               = var.primary_bucket_name
-#   expiration_days           = 30
-#   enable_replication        = true
-#   replication_role_arn      = module.s3_replication_role.replication_role_arn
-#   destination_bucket_arn    = module.s3_secondary.bucket_arn
-#   destination_storage_class = "STANDARD"
-# }
 
 # RDS Module Call (Primary Region)
 module "rds_primary" {
@@ -235,8 +213,7 @@ module "rds_read_replica" {
   parameter_group_name   = var.db_parameter_group
   vpc_security_group_ids = [module.security_group_secondary.security_group_id]
   multi_az               = false
-  # skip_final_snapshot    = false
-  # is_read_replica        = false
+
   # This is critical: replicate from the primary DB instance
   source_db_instance_identifier = module.rds_primary.db_instance_arn
   tags = {
@@ -248,7 +225,7 @@ module "rds_read_replica" {
 
 # Route53 Failover Module
 module "route53_failover" {
-  depends_on = [module.elb_primary, module.elb_secondary]
+  depends_on = [module.elb_primary, module.elb_secondary, module.asg_primary, module.asg_secondary]
   source     = "./modules/route53"
 
   hosted_zone_id                 = var.hosted_zone_id
@@ -257,7 +234,7 @@ module "route53_failover" {
   primary_alb_zone_id            = module.elb_primary.alb_zone_id
   secondary_alb_dns              = module.elb_secondary.alb_dns_name
   secondary_alb_zone_id          = module.elb_secondary.alb_zone_id
-  primary_fqdn                   = var.primary_fqdn
+  primary_fqdn                   = module.elb_primary.alb_dns_name
   health_check_port              = var.health_check_port
   health_check_type              = var.health_check_type
   health_check_interval          = var.health_check_interval
@@ -270,23 +247,83 @@ module "route53_failover" {
 
 # Lambda Failover Module
 module "lambda_failover" {
-  depends_on = [module.ec2, module.asg_secondary, module.elb_secondary, module.rds_read_replica]
+  depends_on = [module.asg_secondary, module.elb_secondary]
   source     = "./modules/lambda"
+
+  providers = {
+    aws = aws.recover
+  }
 
   lambda_role_name     = "dr-failover-lambda-role"
   route53_zone_arn     = "arn:aws:route53:::hostedzone/${var.hosted_zone_id}"
   lambda_function_name = "DRFailoverLambda"
   lambda_runtime       = "python3.9"
   lambda_zip_path      = "modules/lambda/code/failover.zip"
-  lambda_environment_variables = {
-    DOMAIN_NAME         = var.domain_name,
-    PRIMARY_REGION      = var.aws_region,
-    SECONDARY_REGION    = var.aws_region_secondary,
-    STANDBY_INSTANCE_ID = module.ec2.instance_id,
-    HOSTED_ZONE_ID      = var.hosted_zone_id,
-    ASG_NAME            = module.asg_secondary.asg_name,
-    ELB_DNS             = module.elb_secondary.alb_dns_name,
-    ELB_HOSTED_ZONE_ID  = module.elb_secondary.alb_zone_id,
-    READ_REPLICA_ID     = module.rds_read_replica.db_instance_identifier
+
+  tags = {
+    Environment = "DR"
+    Project     = "DR"
   }
+  lambda_environment_variables = {
+    PRIMARY_REGION      = var.aws_region, #
+    SECONDARY_REGION    = var.aws_region_secondary, #
+    ASG_NAME            = module.asg_secondary.asg_name, #
+    READ_REPLICA_ID     = module.rds_read_replica.db_instance_identifier, #
+    SNS_TOPIC_ARN       = module.monitoring.sns_topic_arn #
+  }
+}
+
+
+# Monitoring Module
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  providers = {
+    aws = aws.primary
+  }
+
+  sns_topic_name        = "dr-alerts-topic"
+  subscription_protocol = "email"
+  subscription_endpoint = var.alert_email
+
+  asg_alarm_name          = "DR-ASG-InService-Alarm"
+  asg_evaluation_periods  = 2
+  asg_period              = 300
+  asg_inservice_threshold = 1
+  asg_name                = module.asg_primary.asg_name
+
+  rds_alarm_name          = "DR-RDS-CPU-Alarm"
+  rds_evaluation_periods  = 2
+  rds_period              = 300
+  rds_cpu_threshold       = 80
+  rds_instance_identifier = module.rds_primary.db_instance_identifier
+
+  s3_alarm_name         = "DR-S3-Bucket-Size-Alarm"
+  s3_evaluation_periods = 1
+  s3_period             = 86400
+  s3_size_threshold     = 10000000000
+  s3_bucket_name        = module.s3_primary.bucket_name
+
+  tags = {
+    Environment = "DR"
+    Project     = "DR"
+  }
+}
+
+
+#Trigger module
+module "trigger" {
+  source = "./modules/trigger"
+
+  providers = {
+    aws = aws.recover
+  }
+
+  health_check_id                 = module.route53_failover.health_check_id
+  health_check_alarm_name         = "DR-Route53-Health-Check-Alarm"
+  health_check_evaluation_periods = 1
+  health_check_period             = 60
+  health_check_threshold          = 1
+  lambda_function_arn             = module.lambda_failover.failover_lambda_arn
+  lambda_function_name            = module.lambda_failover.lambda_function_name
 }

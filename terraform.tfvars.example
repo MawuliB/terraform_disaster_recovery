@@ -15,3 +15,5 @@ health_check_port = 80
 health_check_type = "HTTP"
 health_check_interval = 30
 health_check_failure_threshold = 3
+
+alert_email = "youremail@domain.com"
