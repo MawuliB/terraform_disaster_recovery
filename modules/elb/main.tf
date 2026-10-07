@@ -25,7 +25,7 @@ resource "aws_lb" "web_alb" {
   security_groups    = [aws_security_group.elb.id]
   subnets            = var.subnet_ids
 
-    enable_deletion_protection = false
+  enable_deletion_protection = false
 }
 
 resource "aws_lb_target_group" "web_tg" {
@@ -34,20 +34,20 @@ resource "aws_lb_target_group" "web_tg" {
   protocol = "HTTP"
   vpc_id   = var.vpc_id
 
-    health_check {
-        path                = "/"
-        protocol            = "HTTP"
-        port                = "traffic-port"
-        healthy_threshold   = 2
-        unhealthy_threshold = 2
-        timeout             = 4
-        interval            = 10
-        matcher = "200-399"
-    }
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    port                = "traffic-port"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 4
+    interval            = 10
+    matcher             = "200-399"
+  }
 }
 
 resource "aws_lb_listener" "http" {
-    depends_on = [ aws_lb.web_alb ]
+  depends_on        = [aws_lb.web_alb]
   load_balancer_arn = aws_lb.web_alb.arn
   port              = 80
   protocol          = "HTTP"

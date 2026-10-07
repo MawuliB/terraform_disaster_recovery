@@ -1,8 +1,8 @@
 resource "aws_instance" "web_server" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
-  subnet_id     = var.subnet_id
-  vpc_security_group_ids = [ var.sg_id ]
+  ami                    = var.ami_id
+  instance_type          = var.instance_type
+  subnet_id              = var.subnet_id
+  vpc_security_group_ids = [var.sg_id]
 
   associate_public_ip_address = true
 
@@ -14,12 +14,12 @@ resource "aws_instance" "web_server" {
 }
 
 resource "time_sleep" "wait_for_instance" {
-  depends_on = [aws_instance.web_server]
+  depends_on      = [aws_instance.web_server]
   create_duration = "60s"
 }
 
 resource "null_resource" "stop_instance" {
-    depends_on = [ time_sleep.wait_for_instance ]
+  depends_on = [time_sleep.wait_for_instance]
   triggers = {
     instance_id = aws_instance.web_server.id
   }
@@ -27,5 +27,5 @@ resource "null_resource" "stop_instance" {
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.web_server.id} --region ${var.region}"
   }
-  
+
 }

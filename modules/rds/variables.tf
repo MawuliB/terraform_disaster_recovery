@@ -32,12 +32,6 @@ variable "username" {
   type        = string
 }
 
-variable "password" {
-  description = "The master password for the RDS instance."
-  type        = string
-  sensitive   = true
-}
-
 variable "parameter_group_name" {
   description = "The name of the DB parameter group."
   type        = string

@@ -7,7 +7,7 @@ resource "aws_sns_topic" "dr_alerts" {
 # Create an SNS Topic Subscription
 resource "aws_sns_topic_subscription" "dr_alerts_subscription" {
   topic_arn = aws_sns_topic.dr_alerts.arn
-  protocol  = var.subscription_protocol   # "email", "sms"
+  protocol  = var.subscription_protocol # "email", "sms"
   endpoint  = var.subscription_endpoint
 }
 

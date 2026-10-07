@@ -4,7 +4,7 @@ output "alb_dns_name" {
 
 output "alb_arn" {
   value = aws_lb.web_alb.arn
-  
+
 }
 
 output "alb_target_group_arn" {

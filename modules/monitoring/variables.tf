@@ -85,13 +85,13 @@ variable "s3_evaluation_periods" {
 variable "s3_period" {
   description = "Period (in seconds) for the S3 alarm metric"
   type        = number
-  default     = 86400  # Typically, S3 metrics are reported daily
+  default     = 86400 # Typically, S3 metrics are reported daily
 }
 
 variable "s3_size_threshold" {
   description = "Threshold for S3 bucket size (in bytes)"
   type        = number
-  default     = 10000000000  # e.g., 10GB
+  default     = 10000000000 # e.g., 10GB
 }
 
 variable "s3_bucket_name" {

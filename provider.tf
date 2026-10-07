@@ -22,6 +22,6 @@ provider "aws" {
 }
 
 provider "aws" {
-  alias = "recover"
+  alias  = "recover"
   region = var.aws_region_recover
 }

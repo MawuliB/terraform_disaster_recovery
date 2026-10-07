@@ -9,21 +9,21 @@ module "web_sg" {
 
   ingress_with_cidr_blocks = [
     {
-        from_port = 443,
-        to_port = 443,
-        protocol = "tcp",
-        cidr_blocks = var.ingress_cidr_blocks[0]
+      from_port   = 443,
+      to_port     = 443,
+      protocol    = "tcp",
+      cidr_blocks = var.ingress_cidr_blocks[0]
     },
     {
-        from_port = 22,
-        to_port = 22,
-        protocol = "tcp",
-        cidr_blocks = var.ingress_cidr_blocks[0]
+      from_port   = 22,
+      to_port     = 22,
+      protocol    = "tcp",
+      cidr_blocks = var.ingress_cidr_blocks[0]
     }
   ]
 
   ingress_cidr_blocks = var.ingress_cidr_blocks
-  egress_cidr_blocks = var.egress_cidr_blocks
+  egress_cidr_blocks  = var.egress_cidr_blocks
 
-  tags                = var.tags
+  tags = var.tags
 }

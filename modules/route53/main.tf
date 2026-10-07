@@ -1,8 +1,8 @@
 # Health Check for the primary region endpoint
 resource "aws_route53_health_check" "primary" {
-  fqdn              = var.primary_fqdn         # Primary ALB DNS name or domain name
-  port              = var.health_check_port    # 80 or 443
-  type              = var.health_check_type    # "HTTP" or "HTTPS"
+  fqdn              = var.primary_fqdn      # Primary ALB DNS name or domain name
+  port              = var.health_check_port # 80 or 443
+  type              = var.health_check_type # "HTTP" or "HTTPS"
   request_interval  = var.health_check_interval
   failure_threshold = var.health_check_failure_threshold
 
@@ -23,9 +23,9 @@ resource "aws_route53_record" "primary_failover" {
 
   set_identifier = "primary"
   failover_routing_policy {
-    type           = "PRIMARY"
+    type = "PRIMARY"
   }
-    health_check_id = aws_route53_health_check.primary.id
+  health_check_id = aws_route53_health_check.primary.id
 }
 
 # Secondary failover record (active when primary fails)

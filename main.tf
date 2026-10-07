@@ -66,20 +66,20 @@ module "asg_primary" {
   providers = {
     aws = aws.primary
   }
-  source               = "./modules/asg"
-  ami_id               = var.ami_id_primary
-  instance_type        = "t3.micro"
-  security_group_id    = module.security_group_primary.security_group_id
-  subnet_ids           = module.vpc_primary.public_subnets
-  desired_capacity     = 1
-  min_size             = 1
-  max_size             = 2
-  alb_target_group_arn = module.elb_primary.alb_target_group_arn
-  primary_bucket_url = module.s3_primary.bucket_url
-  secondary_bucket_url = module.s3_secondary.bucket_url
-  primary_db_endpoint = module.rds_primary.db_endpoint
+  source                = "./modules/asg"
+  ami_id                = var.ami_id_primary
+  instance_type         = "t3.micro"
+  security_group_id     = module.security_group_primary.security_group_id
+  subnet_ids            = module.vpc_primary.public_subnets
+  desired_capacity      = 1
+  min_size              = 1
+  max_size              = 2
+  alb_target_group_arn  = module.elb_primary.alb_target_group_arn
+  primary_bucket_url    = module.s3_primary.bucket_url
+  secondary_bucket_url  = module.s3_secondary.bucket_url
+  primary_db_endpoint   = module.rds_primary.db_endpoint
   secondary_db_endpoint = module.rds_read_replica.db_endpoint
-  use_dr = false
+  use_dr                = false
 }
 
 module "asg_secondary" {
@@ -87,20 +87,20 @@ module "asg_secondary" {
   providers = {
     aws = aws.secondary
   }
-  source               = "./modules/asg"
-  ami_id               = var.ami_id_secondary
-  instance_type        = "t3.micro"
-  security_group_id    = module.security_group_secondary.security_group_id
-  subnet_ids           = module.vpc_secondary.public_subnets
-  desired_capacity     = 0
-  min_size             = 0
-  max_size             = 0
-  alb_target_group_arn = module.elb_secondary.alb_target_group_arn
-  primary_bucket_url = module.s3_primary.bucket_url
-  secondary_bucket_url = module.s3_secondary.bucket_url
-  primary_db_endpoint = module.rds_primary.db_endpoint
+  source                = "./modules/asg"
+  ami_id                = var.ami_id_secondary
+  instance_type         = "t3.micro"
+  security_group_id     = module.security_group_secondary.security_group_id
+  subnet_ids            = module.vpc_secondary.public_subnets
+  desired_capacity      = 0
+  min_size              = 0
+  max_size              = 0
+  alb_target_group_arn  = module.elb_secondary.alb_target_group_arn
+  primary_bucket_url    = module.s3_primary.bucket_url
+  secondary_bucket_url  = module.s3_secondary.bucket_url
+  primary_db_endpoint   = module.rds_primary.db_endpoint
   secondary_db_endpoint = module.rds_read_replica.db_endpoint
-  use_dr = true
+  use_dr                = true
 }
 
 # ELB module
@@ -131,7 +131,7 @@ module "elb_secondary" {
 
 # S3 Module Call (Primary Region)
 module "s3_primary" {
-  depends_on = [ module.s3_secondary]
+  depends_on = [module.s3_secondary]
   providers = {
     aws = aws.primary
   }
@@ -185,7 +185,6 @@ module "rds_primary" {
   identifier             = "dr-primary-db"
   db_subnet_ids          = module.vpc_primary.private_subnets
   username               = var.db_username
-  password               = var.db_password
   parameter_group_name   = var.db_parameter_group
   vpc_security_group_ids = [module.security_group_primary.security_group_id]
   multi_az               = false
@@ -209,7 +208,6 @@ module "rds_read_replica" {
   identifier             = "dr-read-replica"
   db_subnet_ids          = module.vpc_secondary.private_subnets
   username               = var.db_username
-  password               = var.db_password
   parameter_group_name   = var.db_parameter_group
   vpc_security_group_ids = [module.security_group_secondary.security_group_id]
   multi_az               = false
@@ -257,7 +255,7 @@ module "lambda_failover" {
   lambda_role_name     = "dr-failover-lambda-role"
   route53_zone_arn     = "arn:aws:route53:::hostedzone/${var.hosted_zone_id}"
   lambda_function_name = "DRFailoverLambda"
-  lambda_runtime       = "python3.9"
+  lambda_runtime       = "python3.12"
   lambda_zip_path      = "modules/lambda/code/failover.zip"
 
   tags = {
@@ -265,11 +263,11 @@ module "lambda_failover" {
     Project     = "DR"
   }
   lambda_environment_variables = {
-    PRIMARY_REGION      = var.aws_region, #
-    SECONDARY_REGION    = var.aws_region_secondary, #
-    ASG_NAME            = module.asg_secondary.asg_name, #
-    READ_REPLICA_ID     = module.rds_read_replica.db_instance_identifier, #
-    SNS_TOPIC_ARN       = module.monitoring.sns_topic_arn #
+    PRIMARY_REGION   = var.aws_region,                                 #
+    SECONDARY_REGION = var.aws_region_secondary,                       #
+    ASG_NAME         = module.asg_secondary.asg_name,                  #
+    READ_REPLICA_ID  = module.rds_read_replica.db_instance_identifier, #
+    SNS_TOPIC_ARN    = module.monitoring.sns_topic_arn                 #
   }
 }
 

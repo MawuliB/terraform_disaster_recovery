@@ -18,7 +18,7 @@ variable "lambda_function_name" {
 variable "lambda_runtime" {
   description = "Runtime for the Lambda function"
   type        = string
-  default     = "python3.8"
+  default     = "python3.12"
 }
 
 variable "lambda_zip_path" {

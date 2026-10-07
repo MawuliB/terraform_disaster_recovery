@@ -34,7 +34,7 @@ resource "aws_s3_bucket_versioning" "backup_versioning" {
 resource "aws_s3_bucket_replication_configuration" "replication" {
   # Only create this if replication is enabled
   count = var.enable_replication ? 1 : 0
-  
+
   # Depends on both bucket and versioning
   depends_on = [aws_s3_bucket_versioning.backup_versioning]
 
@@ -44,7 +44,7 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
   rule {
     id     = "CRR"
     status = "Enabled"
-    
+
     destination {
       bucket        = var.destination_bucket_arn
       storage_class = var.destination_storage_class

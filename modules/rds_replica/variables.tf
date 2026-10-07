@@ -32,12 +32,6 @@ variable "username" {
   type        = string
 }
 
-variable "password" {
-  description = "The master password for the RDS instance."
-  type        = string
-  sensitive   = true
-}
-
 variable "parameter_group_name" {
   description = "The name of the DB parameter group."
   type        = string
@@ -68,7 +62,7 @@ variable "source_db_instance_identifier" {
 
 variable "db_subnet_ids" {
   description = "A list of DB subnet IDs for the DB subnet group."
-  type        = list(string) 
+  type        = list(string)
 }
 
 variable "skip_final_snapshot" {
@@ -81,5 +75,5 @@ variable "is_read_replica" {
   description = "Whether the RDS instance is a read replica"
   type        = bool
   default     = true
-  
+
 }

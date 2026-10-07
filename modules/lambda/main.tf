@@ -84,8 +84,8 @@ resource "aws_lambda_function" "failover_lambda" {
   handler       = "failover.handler"
   runtime       = var.lambda_runtime
   role          = aws_iam_role.failover_lambda_role.arn
-  timeout       = 600  # 10 minutes
-  
+  timeout       = 600 # 10 minutes
+
 
   filename         = var.lambda_zip_path
   source_code_hash = filebase64sha256(var.lambda_zip_path)
@@ -99,5 +99,5 @@ resource "aws_cloudwatch_log_group" "failover_lambda_log_group" {
   name              = "/aws/lambda/${var.lambda_function_name}"
   retention_in_days = var.log_retention_days
 
-  tags              = var.tags
+  tags = var.tags
 }

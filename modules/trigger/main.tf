@@ -9,20 +9,20 @@ resource "aws_cloudwatch_metric_alarm" "route53_health_check_alarm" {
   statistic           = "Minimum"
   threshold           = var.health_check_threshold
 
-  alarm_description = "Route53 health check status alarm for DR"
-  alarm_actions     = [var.lambda_function_arn]
+  alarm_description         = "Route53 health check status alarm for DR"
+  alarm_actions             = [var.lambda_function_arn]
   insufficient_data_actions = [var.lambda_function_arn]
 
   dimensions = {
     HealthCheckId = var.health_check_id
   }
-  
+
 }
 
 
 # Permission for CloudWatch to invoke Lambda
 resource "aws_lambda_permission" "allow_cloudwatch_invoke" {
-  
+
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_function_name

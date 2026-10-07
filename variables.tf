@@ -31,11 +31,6 @@ variable "db_username" {
   default     = "admin"
 }
 
-variable "db_password" {
-  description = "The password for the database"
-  default     = "password"
-}
-
 variable "db_parameter_group" {
   description = "The name of the DB parameter group"
 }
